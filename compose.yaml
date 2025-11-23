@@ -48,6 +48,28 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    phpmyadmin:
+        image: phpmyadmin
+        container_name: espolek-phpmyadmin
+        ports:
+            - '8081:80'
+        environment:
+            PMA_HOST: mysql
+            PMA_USER: '${DB_USERNAME}'
+            PMA_PASSWORD: '${DB_PASSWORD}'
+        depends_on:
+            - mysql
+        networks:
+            - sail
+    redis:
+        image: 'redis:7-alpine'
+        container_name: espolek-redis
+        ports:
+            -  '${FORWARD_REDIS_PORT:-6379}:6379'
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            retries: 3
+            timeout: 5s
 networks:
     sail:
         driver: bridge
