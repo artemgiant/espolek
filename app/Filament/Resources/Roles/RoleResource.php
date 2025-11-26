@@ -127,7 +127,8 @@ class RoleResource extends Resource
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
-            ]);
+            ])
+            ->searchable(false);
     }
 
     public static function getRelations(): array
