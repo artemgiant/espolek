@@ -20,6 +20,7 @@ class BankAccount extends Model
     protected $fillable = [
         'account_name',
         'bank_name',
+        'organization_id',
         'bank_code',
         'account_number',
         'iban',
@@ -40,8 +41,7 @@ class BankAccount extends Model
         return [
             'is_transparent' => 'boolean',
             'is_active' => 'boolean',
-            'last_sync_at' => 'datetime',
-            'api_token' => 'encrypted',
+            'last_sync_at' => 'datetime'
         ];
     }
 

@@ -31,6 +31,7 @@ class BankAccountsTable
                     ->searchable(),
                 TextColumn::make('iban')
                     ->searchable(),
+
                 TextColumn::make('currency')
                     ->badge(),
                 IconColumn::make('is_transparent')
@@ -40,18 +41,7 @@ class BankAccountsTable
                 TextColumn::make('last_sync_at')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ,
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                   ,
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                   ,
+
             ])
 
             ->recordActions([

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Jobs\SyncAllBankAccountsJob;
+use App\Jobs\FioSync\SyncAllBankAccountsJob;
 use Illuminate\Console\Command;
 
 /**

@@ -6,7 +6,6 @@ namespace App\Jobs\FioSync;
 
 use App\Models\BankAccount;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

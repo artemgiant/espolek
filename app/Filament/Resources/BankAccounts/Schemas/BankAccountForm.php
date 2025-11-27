@@ -25,6 +25,8 @@ class BankAccountForm
                 TextInput::make('bank_code')
                     ->required()
                     ->default('2010'),
+                TextInput::make('api_token')
+                    ->required(),
                 TextInput::make('account_number')
                     ->required(),
                 TextInput::make('iban')
@@ -37,7 +39,7 @@ class BankAccountForm
                     ->required(),
                 Toggle::make('is_active')
                     ->required(),
-                DateTimePicker::make('last_sync_at'),
+
             ]);
     }
 }
