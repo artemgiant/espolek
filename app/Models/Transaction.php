@@ -17,36 +17,39 @@ class Transaction extends Model
      * @var array<string>
      */
     protected $fillable = [
-        // Bank API fields
-        'transaction_id',
-        'date',
-        'amount',
-        'currency',
-        'counter_account',
-        'counter_bank_code',
-        'counter_bank_name',
-        'counter_bic',
-        'counter_account_name',
-        'ks',
-        'vs',
-        'ss',
-        'user_identification',
-        'recipient_message',
-        'transaction_type',
-        'executor',
-        'comment',
-        'instruction_id',
-        'payer_reference',
+        // Зв'язок
+        'bank_account_id',
 
-        // Our additional fields
-        'operation_type',
-        'expense_type',
-        'income_type',
+        // Поля з FioBanka API
+        'transaction_id',           // column22 - ID pohybu
+        'date',                     // column0  - Datum
+        'amount',                   // column1  - Objem
+        'currency',                 // column14 - Měna
+        'counter_account',          // column2  - Protiúčet
+        'counter_bank_code',        // column3  - Kód banky
+        'counter_bank_name',        // column12 - Název banky
+        'counter_bic',              // не приходить з API, завжди null
+        'counter_account_name',     // column10 - Název protiúčtu
+        'ks',                       // column4  - Konstantní symbol
+        'vs',                       // column5  - Variabilní symbol
+        'ss',                       // column6  - Specifický symbol
+        'user_identification',      // column7  - Uživatelská identifikace
+        'recipient_message',        // column16 - Zpráva pro příjemce
+        'transaction_type',         // column8  - Typ
+        'executor',                 // column9  - Provedl
+        'comment',                  // column25 - Komentář
+        'instruction_id',           // column17 - ID pokynu
+        'specification',            // column18 - Upřesnění (напр. "1225.00 EUR")
+
+        // Наші додаткові поля
+        'operation_type',           // income / expense
+        'expense_type',             // taxable / non_taxable
+        'income_type',              // donation / membership / other
         'description',
         'document_number',
         'confirmation_number',
 
-        // Future relationships
+        // Майбутні зв'язки
         'donor_id',
         'supplier_id',
         'campaign_id',
@@ -82,6 +85,22 @@ class Transaction extends Model
     }
 
     /**
+     * Чи є транзакція доходом.
+     */
+    public function isIncome(): bool
+    {
+        return $this->operation_type === 'income' || $this->amount >= 0;
+    }
+
+    /**
+     * Чи є транзакція витратою.
+     */
+    public function isExpense(): bool
+    {
+        return $this->operation_type === 'expense' || $this->amount < 0;
+    }
+
+    /**
      * Scope a query to only include income transactions.
      */
     public function scopeIncome($query)
@@ -111,5 +130,13 @@ class Transaction extends Model
     public function scopeByVs($query, $vs)
     {
         return $query->where('vs', $vs);
+    }
+
+    /**
+     * Scope a query to filter by bank account.
+     */
+    public function scopeForBankAccount($query, $bankAccountId)
+    {
+        return $query->where('bank_account_id', $bankAccountId);
     }
 }
