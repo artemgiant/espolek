@@ -47,6 +47,11 @@ class SyncAllBankAccountsJob implements ShouldQueue
      */
     private const DEFAULT_DAYS_BACK = 90;
 
+    public function viaQueue(): string
+    {
+        return 'sync-transactions';
+    }
+
     public function __construct(
         public  ?string $dateFrom = null,
         public  ?int $bankAccountId = null,
