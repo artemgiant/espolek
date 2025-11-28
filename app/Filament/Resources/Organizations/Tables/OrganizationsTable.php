@@ -42,18 +42,7 @@ class OrganizationsTable
                     ->searchable(),
                 TextColumn::make('website')
                     ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                   ,
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                  ,
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ,
+
             ])
 
             ->recordActions([
