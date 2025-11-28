@@ -61,6 +61,9 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->maxContentWidth(Width::Full)
-            ->globalSearch(false);
+            ->sidebarCollapsibleOnDesktop()
+            ->globalSearch(false)
+            ->sidebarWidth('14rem')
+            ->collapsedSidebarWidth('4rem');
     }
 }
