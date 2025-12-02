@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Enums\TransactionCategory;
 
 class Transaction extends Model
 {
@@ -44,7 +45,7 @@ class Transaction extends Model
         // Наші додаткові поля
         'operation_type',           // income / expense
         'expense_type',             // taxable / non_taxable
-        'income_type',              // donation / membership / other
+        'category',  // замість income_type
         'description',
         'document_number',
         'confirmation_number',
@@ -65,6 +66,7 @@ class Transaction extends Model
         return [
             'date' => 'date',
             'amount' => 'decimal:2',
+            'category' => TransactionCategory::class,
         ];
     }
 

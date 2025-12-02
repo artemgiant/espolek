@@ -58,34 +58,14 @@ class TransactionInfolist
                 TextEntry::make('expense_type')
                     ->badge()
                     ->placeholder('-'),
-                TextEntry::make('income_type')
+                TextEntry::make('category')
+                    ->label('Категорія')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => $state?->label())
+                    ->color(fn ($state) => $state?->color())
                     ->placeholder('-'),
-                TextEntry::make('description')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                TextEntry::make('document_number')
-                    ->placeholder('-'),
-                TextEntry::make('confirmation_number')
-                    ->placeholder('-'),
-                TextEntry::make('donor_id')
-                    ->numeric()
-                    ->placeholder('-'),
-                TextEntry::make('supplier_id')
-                    ->numeric()
-                    ->placeholder('-'),
-                TextEntry::make('campaign_id')
-                    ->numeric()
-                    ->placeholder('-'),
-                TextEntry::make('created_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('deleted_at')
-                    ->dateTime()
-                    ->visible(fn (Transaction $record): bool => $record->trashed()),
+
+
             ]);
     }
 }
