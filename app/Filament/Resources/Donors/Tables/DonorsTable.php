@@ -9,6 +9,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -19,52 +20,52 @@ class DonorsTable
         return $table
             ->columns([
                 TextColumn::make('type')
-                    ->badge(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('phone')
-                    ->searchable(),
-                TextColumn::make('whatsapp')
-                    ->searchable(),
-                TextColumn::make('facebook_url')
-                    ->searchable(),
-                TextColumn::make('x_url')
-                    ->searchable(),
-                TextColumn::make('linkedin_url')
-                    ->searchable(),
-                TextColumn::make('instagram_url')
-                    ->searchable(),
-                TextColumn::make('first_name')
-                    ->searchable(),
-                TextColumn::make('last_name')
-                    ->searchable(),
-                TextColumn::make('birth_date')
-                    ->date()
+                    ->label('Тип')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'individual' => 'Фізична',
+                        'company' => 'Юридична',
+                        default => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'individual' => 'info',
+                        'company' => 'warning',
+                        default => 'gray',
+                    })
                     ->sortable(),
-                TextColumn::make('company_name')
-                    ->searchable(),
+                TextColumn::make('display_name')
+                    ->label('Ім\'я / Назва')
+                    ->searchable(['first_name', 'last_name', 'company_name'])
+                    ->sortable(),
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
+                    ,
+                TextColumn::make('phone')
+                    ->label('Телефон')
+                   ,
                 TextColumn::make('ico')
-                    ->searchable(),
-                TextColumn::make('dic')
-                    ->searchable(),
-                TextColumn::make('representative_name')
-                    ->searchable(),
+                    ->label('IČO')
+                    ->searchable()
+
+                    ->placeholder('-'),
+                TextColumn::make('transactions_count')
+                    ->label('Транзакцій')
+                    ->counts('transactions')
+                    ->badge()
+                    ->color('success'),
                 TextColumn::make('created_at')
+                    ->label('Створено')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TrashedFilter::make(),
+                SelectFilter::make('type')
+                    ->label('Тип')
+                    ->options([
+                        'individual' => 'Фізична особа',
+                        'company' => 'Юридична особа',
+                    ]),
             ])
             ->recordActions([
                 ViewAction::make(),
@@ -76,6 +77,8 @@ class DonorsTable
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->searchable(false)
+            ->defaultSort('created_at', 'desc');
     }
 }
