@@ -44,6 +44,7 @@ include make/deps.mk
 include make/queue.mk
 include make/deploy.mk
 include make/server.mk
+include make/filament.mk
 include make/logs.mk
 include make/testing.mk
 include make/utils.mk

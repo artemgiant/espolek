@@ -139,4 +139,9 @@ class Transaction extends Model
     {
         return $query->where('bank_account_id', $bankAccountId);
     }
+
+    public function donor(): BelongsTo
+    {
+        return $this->belongsTo(Donor::class);
+    }
 }
