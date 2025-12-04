@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Jobs\FioSync ;
+namespace App\Jobs\FioSync;
 
 use App\Models\BankAccount;
 use App\Models\Transaction;
+use App\Services\Cnb\ExchangeRateService;
 use App\Services\FioBanka\DTO\TransactionDTO;
-use App\Services\FioBanka\Exceptions\RateLimitException;
 use App\Services\FioBanka\FioBankaClient;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
@@ -19,45 +19,28 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Job для синхронізації транзакцій одного банківського акаунту за конкретний період.
+ * Job для синхронізації транзакцій одного банківського акаунту.
  *
- * Виконує один HTTP запит до FioBanka API та зберігає отримані транзакції.
- *
- * Важливо:
- * - Має затримку 35 секунд між запитами (ліміт API - 30 сек)
- * - При помилці 409 (rate limit) робить retry
- * - При інших помилках - зупиняє тільки цей job, інші в batch продовжують
+ * Для кожної транзакції:
+ * - CZK: exchange_rate = 1, amount_czk = amount
+ * - EUR/USD: exchange_rate з Redis, amount_czk = amount * rate
  */
 class SyncBankAccountJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Кількість спроб виконання job.
-     */
     public int $tries = 3;
-
-    /**
-     * Затримка між спробами (секунди): 35, 60, 120.
-     *
-     * @var array<int>
-     */
-    public array $backoff = [35, 60, 120];
-
-    /**
-     * Таймаут виконання job (секунди).
-     */
     public int $timeout = 120;
 
+    /** @var array<int> */
+    public array $backoff = [35, 60, 120];
+
     public function __construct(
-        public  BankAccount $bankAccount,
-        public  Carbon $dateFrom,
-        public  Carbon $dateTo,
+        public BankAccount $bankAccount,
+        public Carbon $dateFrom,
+        public Carbon $dateTo,
     ) {}
 
-    /**
-     * Унікальний ідентифікатор job для запобігання дублювання.
-     */
     public function uniqueId(): string
     {
         return sprintf(
@@ -68,9 +51,8 @@ class SyncBankAccountJob implements ShouldQueue
         );
     }
 
-    public function handle(FioBankaClient $client): void
+    public function handle(FioBankaClient $client, ExchangeRateService $exchangeService): void
     {
-        // Перевіряємо чи batch не був скасований
         if ($this->batch()?->cancelled()) {
             Log::info('SyncBankAccountJob: batch cancelled, skipping', [
                 'bank_account_id' => $this->bankAccount->id,
@@ -85,7 +67,6 @@ class SyncBankAccountJob implements ShouldQueue
             'date_to' => $this->dateTo->format('Y-m-d'),
         ]);
 
-        // Отримуємо транзакції з API
         $statement = $client->getTransactions(
             token: $this->bankAccount->api_token,
             dateFrom: $this->dateFrom,
@@ -97,13 +78,12 @@ class SyncBankAccountJob implements ShouldQueue
             'count' => $statement->transactionsCount(),
         ]);
 
-        // Зберігаємо транзакції
         $created = 0;
         $updated = 0;
 
         foreach ($statement->transactions as $dto) {
             /** @var TransactionDTO $dto */
-            $result = $this->saveTransaction($dto);
+            $result = $this->saveTransaction($dto, $exchangeService);
 
             if ($result === 'created') {
                 $created++;
@@ -122,7 +102,7 @@ class SyncBankAccountJob implements ShouldQueue
     /**
      * Зберігає або оновлює транзакцію в БД.
      */
-    private function saveTransaction(TransactionDTO $dto): string
+    private function saveTransaction(TransactionDTO $dto, ExchangeRateService $exchangeService): string
     {
         $existing = Transaction::where('bank_account_id', $this->bankAccount->id)
             ->where('transaction_id', $dto->transactionId)
@@ -132,6 +112,10 @@ class SyncBankAccountJob implements ShouldQueue
             'bank_account_id' => $this->bankAccount->id,
             'operation_type' => $dto->getOperationType(),
         ]);
+
+        // Додаємо курс та еквівалент в CZK
+        $exchangeData = $this->getExchangeData($dto, $exchangeService);
+        $data = array_merge($data, $exchangeData);
 
         if ($existing) {
             $existing->update($data);
@@ -143,8 +127,44 @@ class SyncBankAccountJob implements ShouldQueue
     }
 
     /**
-     * Обробка невдалого виконання job.
+     * Отримує дані курсу валюти.
+     *
+     * @return array{exchange_rate: float, amount_czk: float}
      */
+    private function getExchangeData(TransactionDTO $dto, ExchangeRateService $exchangeService): array
+    {
+        $currency = $dto->currency;
+
+        // CZK — курс 1, еквівалент = сума
+        if ($currency === 'CZK') {
+            return [
+                'exchange_rate' => 1.0,
+                'amount_czk' => $dto->amount,
+            ];
+        }
+
+        // Отримуємо курс з Redis
+        $rate = $exchangeService->getFromRedis($currency, $dto->date);
+
+        if ($rate === null) {
+            Log::warning('SyncBankAccountJob: exchange rate not found in Redis', [
+                'currency' => $currency,
+                'date' => $dto->date->format('Y-m-d'),
+                'transaction_id' => $dto->transactionId,
+            ]);
+
+            return [
+                'exchange_rate' => null,
+                'amount_czk' => null,
+            ];
+        }
+
+        return [
+            'exchange_rate' => $rate,
+            'amount_czk' => round($dto->amount * $rate, 2),
+        ];
+    }
+
     public function failed(\Throwable $exception): void
     {
         Log::error('SyncBankAccountJob: failed', [
@@ -155,12 +175,8 @@ class SyncBankAccountJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Визначає чи потрібно робити retry при певних exceptions.
-     */
     public function retryUntil(): \DateTime
     {
-        // Максимум 10 хвилин на всі retry
         return now()->addMinutes(10);
     }
 }
