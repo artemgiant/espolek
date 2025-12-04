@@ -97,7 +97,7 @@ class ExchangeRateService
             }
 
             $rates = [];
-            foreach ($response->json() as $item) {
+            foreach ($response->json()['rates'] ?? [] as $item) {
                 $date = Carbon::parse($item['validFor']);
                 $rateValue = (float) $item['rate'] / (int) $item['amount'];
 

@@ -114,11 +114,15 @@ class FetchExchangeRatesJob implements ShouldQueue
         }
     }
 
+
     public function failed(\Throwable $exception): void
     {
         Log::error('FetchExchangeRatesJob: failed', [
             'currency' => $this->currency,
             'error' => $exception->getMessage(),
         ]);
+
+        // Скасувати весь batch — інші jobs не виконуватимуться
+        $this->batch()?->cancel();
     }
 }

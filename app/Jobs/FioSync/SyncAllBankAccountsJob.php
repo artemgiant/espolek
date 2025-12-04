@@ -108,6 +108,8 @@ class SyncAllBankAccountsJob implements ShouldQueue
         }
 
         // Для валютних рахунків додаємо FetchExchangeRatesJob на початок chain
+        dump($account->currency);
+        Log::info($account->currency);
         if ($account->currency !== 'CZK') {
             $fetchRatesJob = new FetchExchangeRatesJob(
                 dateFrom: $dateFrom,

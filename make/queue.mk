@@ -43,8 +43,8 @@ horizon-purge: ## Очистити всі метрики Horizon
 
 # Queue
 queue: ## Запустити queue worker
-	@read -p "Яку чергу запустити? (default: 'equipments,simcards,equipments-deactivate'): " QUEUE_NAME; \
-	QUEUE_NAME=$${QUEUE_NAME:-equipments,equipments-deactivate,simcards}; \
+	@read -p "Яку чергу запустити? (default: 'default'): " QUEUE_NAME; \
+	QUEUE_NAME=$${QUEUE_NAME:-default}; \
 	./vendor/bin/sail artisan queue:work --queue=$$QUEUE_NAME -vv
 
 queue-work: ## Запустити обробник черг
