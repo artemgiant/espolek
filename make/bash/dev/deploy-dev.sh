@@ -19,7 +19,7 @@ php artisan route:clear
 php artisan view:clear
 
 
-
+php artisan migrate
 
 # Оновити Composer залежності
 composer install --optimize-autoloader
@@ -29,7 +29,9 @@ composer install --optimize-autoloader
 php artisan optimize:clear
 
 
-#sudo supervisorctl reread
-#sudo supervisorctl update
-#sudo supervisorctl restart horizon
-#sudo supervisorctl status
+
+
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart horizon
+sudo supervisorctl status
